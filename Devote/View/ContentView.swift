@@ -13,6 +13,8 @@ struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @State var task:String = ""
     @State private var showNewTaskView :Bool = false
+    @AppStorage("isDarkMode") private var isDarkMode: Bool = false
+    
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
         animation: .default)
@@ -40,11 +42,47 @@ struct ContentView: View {
                 
                 VStack {
                     // MARK: - header
+                    HStack(spacing: 10) {
+                        // title
+                        Text("Devote")
+                            .font(.system(.largeTitle))
+                            .fontWeight(.heavy)
+                            .padding(.leading, 4)
+                        
+                        Spacer()
+                        
+                        //edit button
+                        
+                        EditButton()
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .padding(.horizontal, 10)
+                            .frame(minWidth:70, minHeight:  24)
+                            .background(
+                                Capsule()
+                                    .stroke(.white,lineWidth: 2)
+                            )
+                        //appearance button
+                        
+                        Button {
+                            //toggle
+                            isDarkMode.toggle()
+                            playSound(sound: "sound-tap", type: "mp3")
+                        } label: {
+                            Image(systemName: isDarkMode ? "moon.circle.fill":"moon.circle")
+                                .resizable()
+                                .frame(width:24, height: 24)
+                                .font(.system(.title, design: .rounded))
+                        }
+
+                    }//:HStack
+                    .padding()
+                    .foregroundColor(.white)
                     Spacer(minLength: 80)
                     
                     // MARK: - new task button
                     Button {
                         showNewTaskView = true
+                        playSound(sound: "sound-ding", type: "mp3")
                     } label: {
                         Image(systemName: "plus.circle")
                             .font(.system(size: 30, weight: .semibold, design: .rounded))
@@ -63,17 +101,7 @@ struct ContentView: View {
                   // MARK: - list
                     List {
                         ForEach(items) { item in
-                            VStack (alignment:.leading){
-                                Text(item.task ?? " ")
-                                    .font(.headline)
-                                    .fontWeight(.bold)
-                                
-                                Text("Item in \(item.timestamp! , formatter:itemFormatter)")
-                                    .font(.footnote)
-                                    .foregroundColor(.gray)
-                                
-                            }
-                            .padding()//:VStack
+                           ListRowItemView(item: item)
                         }
                         .onDelete(perform: deleteItems)
                     }
@@ -82,15 +110,21 @@ struct ContentView: View {
                     .padding(.vertical, 0)
                     .frame(maxWidth: 640)
                 }//:VStack
-               
+                .blur(radius: showNewTaskView ? 8.0  : 0 ,opaque: false)
+                .transition(.move(edge: .bottom))
+                .animation(.easeOut(duration: 0.5))
+                
                 // MARK: - tasks
                 if showNewTaskView {
-                    BlankView()
-                        .onTapGesture {
+                    BlankView(
+                        backgroundColor: isDarkMode ? .black : .gray,
+                        backgroundOpacity:isDarkMode ? 0.3 : 0.5
+                    )
+                     .onTapGesture {
                             withAnimation(){
                                 showNewTaskView = false
                             }
-                        }
+                     }
                     NewTaskItemView(isShowing: $showNewTaskView)
                 }
                     
@@ -99,13 +133,10 @@ struct ContentView: View {
                 UITableView.appearance().backgroundColor = UIColor.clear
             }
             .navigationBarTitle("Daily Task",displayMode: .large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-            }
+            .navigationBarHidden(true)
             .background(
                 BackgroundView()
+                    .blur(radius: showNewTaskView ? 8.0 : 0 , opaque: false)
             )
             .background(
                 backgroundGradient

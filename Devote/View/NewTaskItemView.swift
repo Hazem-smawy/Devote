@@ -9,6 +9,7 @@ import SwiftUI
 
 struct NewTaskItemView: View {
     // MARK: - Property
+    @AppStorage("isDarkMode") private var isDarkMode:Bool = true
     @Environment(\.managedObjectContext) private var viewContext
     @State private var task:String = ""
     @Binding var isShowing: Bool
@@ -47,12 +48,18 @@ struct NewTaskItemView: View {
             VStack(spacing: 16) {
                 TextField(" New Task", text: $task)
                     .padding()
-                    .background(Color(UIColor.systemGray6))
+                    .background(
+                        isDarkMode
+                            ? Color(UIColor.tertiarySystemBackground)
+                            : Color(UIColor.secondarySystemBackground)
+                    )
                     .cornerRadius(10)
                     .foregroundColor(.pink)
                     .font(.system(size: 24,weight: .bold, design: .rounded))
+                
                 Button {
                     addItem()
+                    playSound(sound: "sound-ding", type: "mp3")
                 } label: {
                     Spacer()
                     Text("Save")
@@ -60,6 +67,11 @@ struct NewTaskItemView: View {
                     Spacer()
                 }
                 .disabled(isButtonDisabled)
+                .onTapGesture(perform: {
+                    if isButtonDisabled {
+                        playSound(sound: "sound-tap", type: "mp3")
+                    }
+                })
                 .padding()
                 .foregroundColor(.white)
                 .background(isButtonDisabled ? .blue : .pink)
@@ -69,7 +81,11 @@ struct NewTaskItemView: View {
             }//:VStack
             .padding(.horizontal)
             .padding(.vertical, 20)
-            .background(.white)
+            .background(
+                isDarkMode
+                    ? Color(UIColor.secondarySystemBackground)
+                    : Color.white
+            )
             .cornerRadius(16)
             .shadow(color: .black.opacity(0.65), radius: 24)
             .frame(maxWidth: 640)
